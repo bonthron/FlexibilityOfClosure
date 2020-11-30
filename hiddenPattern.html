@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Pragma" content="no-cache, no-store" />
+        <meta http-equiv="Expires" content="31 Dec 1997" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bacon.js/3.0.13/Bacon.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ramda/0.27.0/ramda.min.js"></script>
+        <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+        <script type="text/javascript">
+         /*
+            . box IDS
+            .
+            .     1     2
+            .  -------------
+            .  | \ / | \ / |
+            .  | / \ | / \ |
+            .  -------------
+            .  | \ / | \ / |
+            .  | / \ | / \ |
+            .  -------------
+            .     4     3
+            .
+            .
+            . line IDs
+            .
+            .     ---1---
+            .   4 | \ / | 2
+            .     | / \ |
+            .     ---3---
+            .                
+            .
+            .     ---1---
+            .   4 | \ / | 2 
+            .     |6/ \5|
+            .     ---3---
+            .
+            . because there are 2 shared edges: 
+            . box 1 has no line2 (!12), use: (24)
+            . box 3 has no line4 (!34), use: (42)
+          */
+         
+         
+         var cjs = createjs;
+         
+         //--------------------------------------------------------------------------- init
+         function init(){
+             
+             cjs.Ticker.framerate = 60;
+             cjs.Ticker.timingMode = cjs.Ticker.RAF;
+             
+             let SIZE = 80;  // length of line in patterns
+
+             let TIMER_ELM = document.getElementById("timer");
+             let TITLE_ELM = document.getElementById("title");             
+             
+             let stage = new cjs.Stage("canvas1");
+             cjs.Ticker.addEventListener('tick', stage);
+             stage.x = stage.y = 0.5;
+
+             let mask1 = new cjs.Shape();
+             mask1.graphics.f("#fff").r(0,0, 8, 280)
+
+             let mask2 = new cjs.Shape();
+             mask2.graphics.f("#fff").r(0,0, 8, 280)
+             mask2.x = 272
+
+             let mask3 = new cjs.Shape();
+             mask3.graphics.f("#fff").r(0,0, 280, 80);
+             mask3.x = 0;
+             mask3.y = 265;             
+
+             let frame = new cjs.Shape();
+             frame.graphics.ss(4).s("#ef06a4").rr(0,0, (2 * SIZE) + 100, (2 * SIZE) + 100, 10) 
+             frame.x = 10;
+             frame.y = 5;
+
+             
+             //------------------------------------------------------------------------ GRID
+             // GRID =  [boxID, [moveTo-X, moveTo-Y], [lineTo-X, lineTo-Y]]
+
+             let GRID = [
+
+                 // box 1
+                 ["11", [[0, 0],       [SIZE, 0]]],
+                 // ["12"] use "24"
+                 ["13", [[SIZE, SIZE], [0, SIZE]]],
+                 ["14", [[0, SIZE],    [0, 0]]],
+                 ["15", [[0, 0],       [SIZE, SIZE]]],  
+                 ["16", [[SIZE, 0],    [0, SIZE]]],     
+
+                 // box 2
+                 ["21", [[SIZE + 0, 0],       [SIZE +SIZE, 0]]],
+                 ["22", [[SIZE + SIZE, 0],    [SIZE +SIZE, SIZE]]],
+                 ["23", [[SIZE + SIZE, SIZE], [SIZE +0, SIZE]]],
+                 ["24", [[SIZE + 0, SIZE],    [SIZE +0, 0]]],
+                 ["25", [[SIZE + 0, 0],       [SIZE + SIZE, SIZE]]],
+                 ["26", [[SIZE + SIZE, 0],    [SIZE +0, SIZE]]],
+
+                 // box 3
+                 ["31", [[SIZE + 0, SIZE + 0],       [SIZE +SIZE, SIZE + 0]]],
+                 ["32", [[SIZE + SIZE, SIZE + 0],    [SIZE +SIZE, SIZE + SIZE]]],
+                 ["33", [[SIZE + SIZE, SIZE + SIZE], [SIZE +0, SIZE + SIZE]]],
+                 // ["34"] use "42"
+                 ["35", [[SIZE + 0, SIZE + 0],       [SIZE + SIZE, SIZE + SIZE]]],
+                 ["36", [[SIZE + SIZE, SIZE + 0],    [SIZE +0, SIZE + SIZE]]],                    
+
+                 // box 4
+                 ["41", [[0, SIZE + 0],       [SIZE, SIZE + 0]]],
+                 ["42", [[SIZE, SIZE + 0],    [SIZE, SIZE + SIZE]]],
+                 ["43", [[SIZE, SIZE + SIZE], [0, SIZE + SIZE]]],
+                 ["44", [[0, SIZE + SIZE],    [0, SIZE + 0]]],
+                 ["45", [[0, SIZE + 0],       [SIZE, SIZE + SIZE]]],  
+                 ["46", [[SIZE, SIZE + 0],    [0, SIZE + SIZE]]]     
+             ]
+
+             
+             let ALL_PATTERNS = [
+                 ["14","16","21","24","25","33","35","46"],
+                 ["13","16","22","23","26","36","44","46"],
+                 ["15","21","22","23","24","26","35","41","42","43","44","46"],
+                 ["11","14","21","24","32","35","46"],
+                 ["13","16","21","24","26","31","35","36","43","46"],
+                 ["15","13","14","21","26","35","41","46","44"],
+                 ["21","22","23","24","35","33","41","43","44","46"],
+                 ["16","25","26","35","36","43","44","45"],
+                 ["21","22","23","24","35","41","42","43","44","46"],
+                 ["11","15","21","26","31","32","35","42","43","46"],
+                 ["21","22","24","26","32","35","41","42","43","44","46"],
+                 ["11","15","24","22","26","32","35","42","43","46"],                 
+                 ["21","24","26","35","46","41","44"],                 
+                 ["21","22","23","24","26","43","44","46"]
+             ]
+
+             let MODEL = ["21","24","35","46"];
+             let WRONG = ["15","26","35","46"];
+
+             let PATTERNS = shuffle(ALL_PATTERNS);
+             
+             
+             // ----------------------------------------------------------------------- shuffle
+             function shuffle(arr) {
+                 
+                 arr = arr.concat();
+                 var m = arr.length, t, i;
+                 
+                 while (m) {
+                     i = Math.floor(Math.random() * m--);
+                     t = arr[m];
+                     arr[m] = arr[i];
+                     arr[i] = t;
+                 }
+                 
+                 return arr;
+             }
+             
+             
+             let onStage = {x:60, y:56}
+             let offStageRight = {x:60 + (3 * SIZE), y:56}
+             let offStageLeft = {x:60 - (3 * SIZE), y:56}
+             let offStageDown = {x:60, y:56 + (3 * SIZE)}                          
+
+             let TITLE = new cjs.Shape();
+             TITLE.x = onStage.x;
+             TITLE.y = onStage.y;
+             drawCorrect(TITLE)
+             
+             let cellA = new cjs.Shape();
+             cellA.x = offStageRight.x;
+             cellA.y = offStageRight.y;
+
+             let cellB = new cjs.Shape();
+             cellB.x = offStageRight.x;
+             cellB.y = offStageRight.y;
+
+             let CELLS = {A:cellA, B:cellB};
+             
+             stage.addChild(cellA);
+             stage.addChild(cellB);            
+             stage.addChild(mask1);
+             stage.addChild(mask2);
+             stage.addChild(mask3);            
+             stage.addChild(frame);
+             stage.addChild(TITLE);                                       
+
+             
+             //------------------------------------------------------------------------ draw
+             function draw(cell, pattern){
+
+                 let lines = R.filter(g => { return R.includes(g[0], pattern) }, GRID)
+
+                 let g = cell.graphics;                 
+                 g.clear();
+                 
+                 R.forEach((l) => {
+                     let id = l[0];
+                     let coords = l[1];
+                     let color = "#333";
+                     let mT = coords[0];
+                     let lT = coords[1];
+                     g.setStrokeStyle(4, "round");
+                     g.beginStroke(color);
+                     g.moveTo(mT[0],mT[1]);
+                     g.lineTo(lT[0],lT[1]);
+                     g.es();
+                 }, lines)
+             }
+
+
+             //------------------------------------------------------------------------ drawWrong
+             function drawWrong(cell){
+
+                 let lines = R.filter(g => { return R.includes(g[0], WRONG) }, GRID)
+
+                 let g = cell.graphics;                 
+                 g.clear();
+                 
+                 R.forEach((l) => {
+                     let id = l[0];
+                     let coords = l[1];
+                     let color = "#ef06a4";
+                     let mT = coords[0];
+                     let lT = coords[1];
+                     g.setStrokeStyle(4, "round");
+                     g.beginStroke(color);
+                     g.moveTo(mT[0],mT[1]);
+                     g.lineTo(lT[0],lT[1]);
+                     g.es();
+                 }, lines)
+             }
+
+             
+             //------------------------------------------------------------------------ drawCorrect
+             function drawCorrect(cell){
+
+                 let lines = R.filter(g => { return R.includes(g[0], MODEL )}, GRID)
+
+                 let g = cell.graphics;                 
+                 // g.clear();  DON'T CLEAR
+                 
+                 R.forEach((l) => {
+                     let id = l[0];
+                     let coords = l[1];
+                     let color = "#ef06a4";
+                     let mT = coords[0];
+                     let lT = coords[1];
+                     g.setStrokeStyle(4, "round");
+                     g.beginStroke(color);
+                     g.moveTo(mT[0],mT[1]);
+                     g.lineTo(lT[0],lT[1]);
+                     g.es();
+                 }, lines)
+             }
+             
+             
+
+             let startButton = document.getElementById("startButton");
+             let yesButton = document.getElementById("yesButton");
+             let noButton = document.getElementById("noButton");
+
+             
+             let startButtonStream = Bacon.fromEvent(startButton, "click").map(() => {return {e:"start"};});
+             let yesButtonStream = Bacon.fromEvent(yesButton, "click").map(() => {return {e:"yes"};});
+             let noButtonStream = Bacon.fromEvent(noButton, "click").map(() => {return {e:"no"};});
+             let tickStream = Bacon.interval(500, {e:"tick"})
+
+             let ui = Bacon.mergeAll(startButtonStream, yesButtonStream, noButtonStream, tickStream);
+             
+             let game = ui.withStateMachine({state:"NOT-STARTED", cell:"A", pattern:0, time:0, timer:0}, (acc, event) => {
+                 
+                 let e = event.value.e;
+                 acc = R.clone(acc);
+                 
+                 if(e == "tick"){ acc.time += 0.5; };
+                 
+                 switch(acc.state){
+
+                     case "NOT-STARTED":
+                         if(e == "start"){
+
+                             TITLE.visible = false;
+
+                             startButton.style.display = "none";
+                             yesButton.style.display = "inline";
+                             noButton.style.display = "inline";
+
+                             acc.state = "START-ROUND";
+                             acc.timer = acc.time;
+                             return [acc, [new Bacon.Next({e:"START-ROUND", cell:acc.cell, pattern:acc.pattern})]];
+                         }
+                         break;
+
+                         
+                     case "START-ROUND":
+                         if(acc.time >= acc.timer + 1){
+                             acc.state = "PLAYER-ROUND";
+                             acc.timer = acc.time;
+                             return [acc, [new Bacon.Next({e:"PLAYER-ROUND"})]]
+                         }
+                         break;                         
+
+                         
+                     case "PLAYER-ROUND":
+                         if(e == "yes" || e == "no"){
+                             let hasModel = R.equals(R.intersection(PATTERNS[acc.pattern], MODEL), MODEL);
+                             let correct = ((e == "yes") &&  hasModel) ||
+                                           ((e == "no")  && !hasModel);
+
+                             acc.state = "END-ROUND";
+                             acc.timer = acc.time;
+                             return [acc, [new Bacon.Next({e:"END-ROUND", cell: acc.cell, correct:correct, hasModel:hasModel, pattern:acc.pattern})]]
+                         };
+                         if(acc.time >= acc.timer + 2){
+                             acc.state = "END-ROUND";
+                             acc.timer = acc.time;
+                             return [acc, [new Bacon.Next({e:"END-ROUND", cell: acc.cell, correct:false, timeout:true})]]
+                         }                         
+                         break;
+
+                         
+                     case "END-ROUND":
+                         if(acc.time >= acc.timer + 1.5){
+                             acc.state = "START-ROUND";
+                             acc.timer = acc.time;
+                             acc.cell = (acc.cell == "A") ? "B" : "A";
+                             acc.pattern++;
+                             
+                             if(acc.pattern == PATTERNS.length){
+                                 acc.state = "GAME-OVER";
+                                 acc.pattern = 0;
+                                 acc.timer = 0;
+                                 acc.time = 0;
+                                 return [acc, [new Bacon.Next({e:"GAME-OVER"})]];
+                             }
+                             
+                             return [acc, [new Bacon.Next({e:"START-ROUND", cell:acc.cell, pattern:acc.pattern})]];
+                         }
+                         break;
+
+                         
+                     case "GAME-OVER":
+                         TITLE.visible = true;
+                         yesButton.style.display = "none";
+                         noButton.style.display = "none";
+                         break;
+                 };
+
+                 return [acc, []];
+             });
+
+
+             game.onValue((o) => {
+
+                 switch(o.e){
+
+                     case "START-ROUND":
+                         CELLS[o.cell].x = offStageRight.x;
+                         CELLS[o.cell].y = offStageRight.y;
+                         draw(CELLS[o.cell], PATTERNS[o.pattern]);
+                         cjs.Tween.get(CELLS[o.cell])
+                            .to({x:onStage.x, y:onStage.y}, 500, cjs.Ease.sineOut)
+                            .call(() => { yesButton.disabled = false; noButton.disabled = false; })
+                         
+                         break;
+                         
+                     case "END-ROUND":
+                         yesButton.disabled = true; 
+                         noButton.disabled = true; 
+                         
+                         if(o.timeout){
+                             cjs.Tween.get(CELLS[o.cell]).to({x:offStageLeft.x, y:offStageLeft.y}, 500, cjs.Ease.sineOut);
+                         }else{
+                             if(o.correct){
+                                 if(o.hasModel){
+                                     drawCorrect(CELLS[o.cell])
+                                     cjs.Tween.get(CELLS[o.cell]).wait(500).to({x:offStageLeft.x, y:offStageLeft.y}, 500, cjs.Ease.sineOut);
+                                 }else{
+                                     cjs.Tween.get(CELLS[o.cell]).to({x:offStageLeft.x, y:offStageLeft.y}, 500, cjs.Ease.sineOut);
+                                 };
+                             }else{
+                                 drawWrong(CELLS[o.cell])
+                                 cjs.Tween.get(CELLS[o.cell]).wait(500).to({x:offStageDown.x, y:offStageDown.y}, 500);
+                             };                         
+                         };
+                         break;                         
+                 };
+             });
+             
+         }; // init        
+
+         window.onload = init;
+         
+         
+        </script>
+        <style>
+         body {
+             font-family: arial;
+             padding:20px;
+             font-size:16px;
+             color:#222;
+             text-align:center;
+         }
+         canvas { border:1px solid #fff; display:block; margin:0px auto; cursor:pointer;}
+         #startButton {
+             background-color: #ef06a4;
+             color:#fff;
+             font-size:24px;
+             border-radius:4px;
+             padding:5px 30px;
+             border:none;
+             box-shadow:1px 1px 1px 0px #ccc;
+             cursor:pointer;
+             outline:none;
+         }
+
+         #noButton, #yesButton {
+             display:none;
+             background-color: #ccc;
+             color:#222;
+             font-size:18px;
+             line-height:18px;
+             border-radius:4px;
+             width:100px;
+             padding:7px 5px 5px 5px;
+             border:none;
+             box-shadow:1px 1px 1px 0px #555;
+             cursor:pointer;
+             outline:none;
+         }
+         #yesButton { margin-left: 30px;}
+
+         #noButton:hover, #yesButton:hover {
+             background-color: #ddd;
+         }
+
+         #noButton:disabled, #yesButton:disabled {
+             opacity:0.7;
+         }         
+         
+         button:hover, button:active {
+             background-color: #ff0ab1;
+         }
+         button:active {
+             transform: translate(0px, 1px);
+             box-shadow:none;
+         }
+
+         #container {
+             width:750px;
+             margin:0 auto;
+             position:relative;
+         }
+         
+         #timer {
+             text-align:center;
+             width:50px;
+             color:#ccc;
+             font-size:50px;
+             float:left;
+         }
+         #title {
+             display:none;
+             position:absolute;
+             top:40px;
+             left:200px;             
+         }
+        </style>            
+    </head>
+    <body>
+
+        <div id="container">
+            <canvas id="canvas1" width="280" height="300"></canvas>
+            <div style="width:280px; margin:0px auto 0px auto; border:1px solid white">
+                <button id="noButton">NO</button>            
+                <button id="yesButton">YES</button>
+                <button id="startButton">start game</button>
+            </div>
+            <img id="title" />
+        </div>
+
+    </body>
+</html>
