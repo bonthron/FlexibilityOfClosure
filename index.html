@@ -8,6 +8,7 @@
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet">
         <link rel="stylesheet" href="tachyons.min.css" />
         
         <script type="text/javascript" src="Bacon.min.js"></script>
@@ -400,13 +401,10 @@
         </script>
         <style>
          body {
-             font-family: arial;
-             padding:20px;
-             font-size:16px;
+             font-family: 'Inter', sans-serif;             
              color:#222;
-             text-align:center;
          }
-         canvas { border:1px solid #fff; display:block; margin:0px auto; cursor:pointer;}
+         canvas { border:1px solid #ddd; display:block; margin:0px auto; cursor:pointer;}
          #startButton {
              background-color: #ef06a4;
              color:#fff;
@@ -421,7 +419,7 @@
 
          #noButton, #yesButton {
              display:none;
-             background-color: #ccc;
+             background-color: #ddd;
              color:#222;
              font-size:18px;
              line-height:18px;
@@ -475,8 +473,8 @@
     <body>
 
         <div id="container">
-            <canvas id="canvas1" width="280" height="300"></canvas>
-            <div style="width:280px; margin:0px auto 0px auto; border:1px solid white">
+            <canvas id="canvas1" width="280" height="300" class="db"></canvas>
+            <div style="width:280px;">
                 <button id="noButton">NO</button>            
                 <button id="yesButton">YES</button>
                 <button id="startButton">start game</button>
@@ -484,5 +482,15 @@
             <img id="title" />
         </div>
 
+        <p class="f5 tl lh-copy">
+        How quickly can you recognize a figure that is hidden among other lines?<br />
+        In each pattern you are to look for this model:
+
+        Your task is to click "YES" for each pattern in which the modal appears.<br />
+        Or "NO" if the the model does not apear.<br />
+        </p>
+        
     </body>
 </html>
+
+
