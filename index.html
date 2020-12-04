@@ -264,7 +264,7 @@
              let startButton = document.getElementById("startButton");
              let yesButton = document.getElementById("yesButton");
              let noButton = document.getElementById("noButton");
-
+             let directions = document.getElementById("directions");
              
              let startButtonStream = Bacon.fromEvent(startButton, "click").map(() => {return {e:"start"};});
              let yesButtonStream = Bacon.fromEvent(yesButton, "click").map(() => {return {e:"yes"};});
@@ -286,8 +286,9 @@
                          if(e == "start"){
 
                              TITLE.visible = false;
-
-                             startButton.style.display = "none";
+                             
+                             directions.style.display = "none";
+                             startButton.style.visibility = "hidden";
                              yesButton.style.display = "inline";
                              noButton.style.display = "inline";
 
@@ -400,11 +401,13 @@
          
         </script>
         <style>
+         html,body{height:100%; padding:0px;}
          body {
              font-family: 'Inter', sans-serif;             
              color:#222;
+             border: 1px solid #10f95b;
          }
-         canvas { border:1px solid #ddd; display:block; margin:0px auto; cursor:pointer;}
+         canvas { display:block; margin:0px auto; cursor:pointer;}
          #startButton {
              background-color: #ef06a4;
              color:#fff;
@@ -419,12 +422,12 @@
 
          #noButton, #yesButton {
              display:none;
-             background-color: #ddd;
+             background-color: #efefef;
              color:#222;
              font-size:18px;
-             line-height:18px;
+             line-height:30px;
              border-radius:4px;
-             width:100px;
+             width:120px;
              padding:7px 5px 5px 5px;
              border:none;
              box-shadow:1px 1px 1px 0px #555;
@@ -438,7 +441,7 @@
          }
 
          #noButton:disabled, #yesButton:disabled {
-             opacity:0.7;
+             opacity:0.5;
          }         
          
          button:hover, button:active {
@@ -449,12 +452,6 @@
              box-shadow:none;
          }
 
-         #container {
-             width:750px;
-             margin:0 auto;
-             position:relative;
-         }
-         
          #timer {
              text-align:center;
              width:50px;
@@ -468,28 +465,42 @@
              top:40px;
              left:200px;             
          }
+
+         .auto {
+             margin-left:auto;
+             margin-right:auto;             
+         }
+         
         </style>            
     </head>
-    <body>
+     <body>
+        <div style="width:280px;" class="mt4 auto">
 
-        <div id="container">
             <canvas id="canvas1" width="280" height="300" class="db"></canvas>
-            <div style="width:280px;">
-                <button id="noButton">NO</button>            
-                <button id="yesButton">YES</button>
+
+            <div style="width:280px;" class="tc">
                 <button id="startButton">start game</button>
             </div>
-            <img id="title" />
+
+            <div id="directions">
+                <p class="f5 tl lh-copy mt4">
+                    How quickly can you recognize a figure that is hidden among other lines?
+                </p>
+                <p class="f5 tl lh-copy">
+                    In each pattern you are to look for this model:
+                    <img src="flxSmall.png" class="db auto" />
+                </p>
+                <p class="f5 tl lh-copy">
+                    Your task is to click "YES" for each pattern in which the model appears.
+                </p>
+            </div>
+
+            <div style="width:280px; position:absolute; bottom:50px;" class="tc">
+                <button id="noButton">NO</button>            
+                <button id="yesButton">YES</button>
+            </div>
+            
         </div>
-
-        <p class="f5 tl lh-copy">
-        How quickly can you recognize a figure that is hidden among other lines?<br />
-        In each pattern you are to look for this model:
-
-        Your task is to click "YES" for each pattern in which the modal appears.<br />
-        Or "NO" if the the model does not apear.<br />
-        </p>
-        
     </body>
 </html>
 
