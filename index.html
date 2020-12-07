@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
     <head>
         <title>Flexibility Of Closure</title>
@@ -8,7 +8,7 @@
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="tachyons.min.css" />
         
         <script type="text/javascript" src="Bacon.min.js"></script>
@@ -258,13 +258,13 @@
                      g.es();
                  }, lines)
              }
-             
-             
 
+             
              let startButton = document.getElementById("startButton");
              let yesButton = document.getElementById("yesButton");
              let noButton = document.getElementById("noButton");
              let directions = document.getElementById("directions");
+             let scoreDisplay = document.getElementById("score");             
              
              let startButtonStream = Bacon.fromEvent(startButton, "click").map(() => {return {e:"start"};});
              let yesButtonStream = Bacon.fromEvent(yesButton, "click").map(() => {return {e:"yes"};});
@@ -287,6 +287,7 @@
 
                              TITLE.visible = false;
                              
+                             scoreDisplay.style.display = "block";
                              directions.style.display = "none";
                              startButton.style.visibility = "hidden";
                              yesButton.style.display = "inline";
@@ -309,19 +310,19 @@
 
                          
                      case "PLAYER-ROUND":
+                         let hasModel = R.equals(R.intersection(PATTERNS[acc.pattern], MODEL), MODEL);                         
                          if(e == "yes" || e == "no"){
-                             let hasModel = R.equals(R.intersection(PATTERNS[acc.pattern], MODEL), MODEL);
                              let correct = ((e == "yes") &&  hasModel) ||
                                            ((e == "no")  && !hasModel);
 
                              acc.state = "END-ROUND";
                              acc.timer = acc.time;
-                             return [acc, [new Bacon.Next({e:"END-ROUND", cell: acc.cell, correct:correct, hasModel:hasModel, pattern:acc.pattern})]]
+                             return [acc, [new Bacon.Next({e:"END-ROUND", cell: acc.cell, correct:correct, hasModel:hasModel, pattern:acc.pattern, timeout:false})]]
                          };
                          if(acc.time >= acc.timer + 2){
                              acc.state = "END-ROUND";
                              acc.timer = acc.time;
-                             return [acc, [new Bacon.Next({e:"END-ROUND", cell: acc.cell, correct:false, timeout:true})]]
+                             return [acc, [new Bacon.Next({e:"END-ROUND", cell: acc.cell, correct:false, hasModel:hasModel, pattern:acc.pattern, timeout:true})]]                             
                          }                         
                          break;
 
@@ -333,7 +334,7 @@
                              acc.cell = (acc.cell == "A") ? "B" : "A";
                              acc.pattern++;
                              
-                             if(acc.pattern == PATTERNS.length){
+                             if(acc.pattern == 3){
                                  acc.state = "GAME-OVER";
                                  acc.pattern = 0;
                                  acc.timer = 0;
@@ -357,6 +358,21 @@
              });
 
 
+             let score = game
+                 .filter((o) => { return o.e == "END-ROUND"; })
+                 .scan([0,0], (acc, o) => {
+                     if(o.correct){
+                         return [acc[0] + 1, acc[1] + 1];
+                     }else{
+                         return [acc[0] + 1, acc[1]];
+                     };
+                 })
+                 .onValue((arr) => {
+                     document.getElementById("count").innerText = arr[0];
+                     document.getElementById("correct").innerText = arr[1];
+                 });
+
+             
              game.onValue((o) => {
 
                  switch(o.e){
@@ -374,22 +390,19 @@
                      case "END-ROUND":
                          yesButton.disabled = true; 
                          noButton.disabled = true; 
-                         
-                         if(o.timeout){
-                             cjs.Tween.get(CELLS[o.cell]).to({x:offStageLeft.x, y:offStageLeft.y}, 500, cjs.Ease.sineOut);
-                         }else{
-                             if(o.correct){
+                         console.log(o)
+                         if(o.correct){
+                             if(o.hasModel){ drawCorrect(CELLS[o.cell]) };                             
+                             cjs.Tween.get(CELLS[o.cell]).wait(500).to({x:offStageLeft.x, y:offStageLeft.y}, 500, cjs.Ease.sineOut);                         }else{
                                  if(o.hasModel){
                                      drawCorrect(CELLS[o.cell])
-                                     cjs.Tween.get(CELLS[o.cell]).wait(500).to({x:offStageLeft.x, y:offStageLeft.y}, 500, cjs.Ease.sineOut);
+                                     cjs.Tween.get(CELLS[o.cell]).wait(500).to({x:offStageDown.x, y:offStageDown.y}, 500);
                                  }else{
-                                     cjs.Tween.get(CELLS[o.cell]).to({x:offStageLeft.x, y:offStageLeft.y}, 500, cjs.Ease.sineOut);
-                                 };
-                             }else{
-                                 drawWrong(CELLS[o.cell])
-                                 cjs.Tween.get(CELLS[o.cell]).wait(500).to({x:offStageDown.x, y:offStageDown.y}, 500);
-                             };                         
-                         };
+                                     drawWrong(CELLS[o.cell])
+                                     cjs.Tween.get(CELLS[o.cell]).wait(500).to({x:offStageDown.x, y:offStageDown.y}, 500);
+                                 };;
+                                 
+                             }
                          break;                         
                  };
              });
@@ -441,7 +454,7 @@
          }
 
          #noButton:disabled, #yesButton:disabled {
-             opacity:0.5;
+             opacity:0.3;
          }         
          
          button:hover, button:active {
@@ -470,13 +483,19 @@
              margin-left:auto;
              margin-right:auto;             
          }
-         
+
+         #score { display:none; }
         </style>            
     </head>
-     <body>
+    <body>
         <div style="width:280px;" class="mt4 auto">
 
             <canvas id="canvas1" width="280" height="300" class="db"></canvas>
+
+            <div id="score" class="f6">
+                <div id="count" class="dib tc" style="width:20px;">0</div>
+                <div id="correct" class="dib tc" style="width:20px; color:#32CD32">0</div>                
+            </div>
 
             <div style="width:280px;" class="tc">
                 <button id="startButton">start game</button>
