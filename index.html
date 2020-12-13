@@ -419,7 +419,8 @@
       body {
           font-family: 'Inter', sans-serif;             
           color:#222;
-          background-color:#222;	     
+          background-color:#222;
+	  min-height:600px;
       }
       canvas { display:block; margin:0px auto; cursor:pointer;}
       #startButton {
@@ -486,6 +487,15 @@
       }
 
       #score { display:none; }
+
+
+      #dirIntro { display:none; }
+
+      @media only screen and (min-height: 700px) {
+	  #dirIntro {
+	      display:block;
+	  }
+      }      
     </style>            
   </head>
   <body>
@@ -501,7 +511,7 @@
           </div>
 
           <div id="directions" style="padding-left:10px;">
-            <p class="f5 tl lh-copy db-ns dn">
+            <p id="dirIntro" class="f5 tl lh-copy">
               How quickly can you recognize a figure that is hidden among other lines?
             </p>
             <p class="f5 tl lh-copy">
