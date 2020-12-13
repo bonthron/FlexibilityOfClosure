@@ -335,7 +335,7 @@
                       acc.cell = (acc.cell == "A") ? "B" : "A";
                       acc.pattern++;
                       
-                      if(acc.pattern == 3){
+                      if(acc.pattern == 1){
                           acc.state = "GAME-OVER";
                           acc.pattern = 0;
                           acc.timer = 0;
@@ -350,8 +350,19 @@
                   
               case "GAME-OVER":
                   TITLE.visible = true;
+                  scoreDisplay.style.display = "none";
+                  directions.style.display = "block";
+                  startButton.style.visibility = "visible";
                   yesButton.style.display = "none";
                   noButton.style.display = "none";
+
+                  acc.state = "NOT-STARTED";
+                  acc.timer = acc.time;
+                  acc.pattern = 0;
+                  acc.timer = 0;
+                  acc.time = 0;                  
+                  return [acc, [new Bacon.Next({e:"NOT-STARTED", cell:acc.cell, pattern:acc.pattern})]];
+                  
                   break;
               };
 
@@ -528,9 +539,11 @@
             <button id="noButton">NO</button>            
             <button id="yesButton">YES</button>
           </div>
+	  
         </div>
       </div>
-    </div>	
+    </div>
+    
   </body>
 </html>
 
