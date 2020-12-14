@@ -265,15 +265,47 @@
           let noButton = document.getElementById("noButton");
           let directions = document.getElementById("directions");
           let scoreDisplay = document.getElementById("score");             
+
+          let startStream = new Bacon.Bus();
           
-          let startButtonStream = Bacon.fromEvent(startButton, "click").map(() => {return {e:"start"};});
+          let startButtonStream = Bacon.fromEvent(startButton, "click").onValue(() => {
+
+              cjs.Tween.get({alpha:1}).to({alpha:0}, 2000).call(() => {
+                  startStream.push({e:"start"});
+              }).addEventListener("change", (e) => {
+                  let a = e.target.target.alpha;
+                  TITLE.alpha = a;
+                  yesButton.style.opacity = 1 - a;
+                  noButton.style.opacity = 1 - a;
+              })
+
+              directions.style.opacity = 0;
+              yesButton.style.display = "inline";
+              noButton.style.display = "inline";              
+              scoreDisplay.style.display = "block";
+              startButton.style.visibility = "hidden";                  
+          });
+
           let yesButtonStream = Bacon.fromEvent(yesButton, "click").map(() => {return {e:"yes"};});
           let noButtonStream = Bacon.fromEvent(noButton, "click").map(() => {return {e:"no"};});
+
+          let keyStream = new Bacon.Bus();
+
+          let codes = { 70:"no", f:"no", F:"no",
+                        74:"yes", j:"yes", J:"yes" }
+		       
+          document.onkeydown = (e) => {
+	      if(e.repeat){return;};
+	      let c = event.key || event.keyCode;
+	      let k = codes[c];
+              if(k == "yes"){ keyStream.push({e:"yes"}); }
+              if(k == "no"){ keyStream.push({e:"no"}); }
+          };
+          
           let tickStream = Bacon.interval(500, {e:"tick"})
 
-          let ui = Bacon.mergeAll(startButtonStream, yesButtonStream, noButtonStream, tickStream);
-
-	  
+          let ui = Bacon.mergeAll(startStream, yesButtonStream, noButtonStream, keyStream, tickStream);
+          
           let game = ui.withStateMachine({state:"NOT-STARTED", cell:"A", pattern:0, time:0, timer:0}, (acc, event) => {
               
               let e = event.value.e;
@@ -285,15 +317,6 @@
 
               case "NOT-STARTED":
                   if(e == "start"){
-
-                      TITLE.visible = false;
-                      
-                      scoreDisplay.style.display = "block";
-                      directions.style.display = "none";
-                      startButton.style.visibility = "hidden";
-                      yesButton.style.display = "inline";
-                      noButton.style.display = "inline";
-
                       acc.state = "START-ROUND";
                       acc.timer = acc.time;
                       return [acc, [new Bacon.Next({e:"START-ROUND", cell:acc.cell, pattern:acc.pattern})]];
@@ -302,7 +325,7 @@
 
                   
               case "START-ROUND":
-                  if(acc.time >= acc.timer + 1){
+                  if(acc.time >= acc.timer + .5){
                       acc.state = "PLAYER-ROUND";
                       acc.timer = acc.time;
                       return [acc, [new Bacon.Next({e:"PLAYER-ROUND"})]]
@@ -335,7 +358,7 @@
                       acc.cell = (acc.cell == "A") ? "B" : "A";
                       acc.pattern++;
                       
-                      if(acc.pattern == 1){
+                      if(acc.pattern == 10){
                           acc.state = "GAME-OVER";
                           acc.pattern = 0;
                           acc.timer = 0;
@@ -349,13 +372,21 @@
 
                   
               case "GAME-OVER":
-                  TITLE.visible = true;
-                  scoreDisplay.style.display = "none";
-                  directions.style.display = "block";
-                  startButton.style.visibility = "visible";
-                  yesButton.style.display = "none";
-                  noButton.style.display = "none";
 
+                  cjs.Tween.get({alpha:0}).to({alpha:1}, 2000).call(() => {
+                      directions.style.opacity = 1;
+                      scoreDisplay.style.display = "none";
+                      startButton.style.visibility = "visible";
+                      yesButton.style.display = "none";
+                      noButton.style.display = "none";                  
+                  }).addEventListener("change", (e) => {
+                      let a = e.target.target.alpha;
+                      TITLE.alpha = a;
+                      yesButton.style.opacity = 1 - a;
+                      noButton.style.opacity = 1 - a;
+                  });
+                  
+                  PATTERNS = shuffle(ALL_PATTERNS);
                   acc.state = "NOT-STARTED";
                   acc.timer = acc.time;
                   acc.pattern = 0;
@@ -370,9 +401,12 @@
           });
 
 
-          let score = game
-              .filter((o) => { return o.e == "END-ROUND"; })
+          let score = game.merge(startStream)
+              .filter((o) => { return o.e == "END-ROUND" || o.e == "start"; })
               .scan([0,0], (acc, o) => {
+
+                  if(o.e == "start"){ return [0,0]; };
+                  
                   if(o.correct){
                       return [acc[0] + 1, acc[1] + 1];
                   }else{
@@ -402,7 +436,7 @@
               case "END-ROUND":
                   yesButton.disabled = true; 
                   noButton.disabled = true; 
-                  console.log(o)
+
                   if(o.correct){
                       if(o.hasModel){ drawCorrect(CELLS[o.cell]) };                             
                       cjs.Tween.get(CELLS[o.cell]).wait(500).to({x:offStageLeft.x, y:offStageLeft.y}, 500, cjs.Ease.sineOut);                         }else{
@@ -510,7 +544,8 @@
     </style>            
   </head>
   <body>
-    <div style="display:flex; justify-content:center; height:100%;">
+    <div style="display:flex; justify-content:center; height:100%; position:relative; z-index:10">
+      
       <div style="width:400px; background-color:#fff;">
         <div style="width:280px" class="auto mt4">
 
