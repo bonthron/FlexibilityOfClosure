@@ -334,7 +334,11 @@
 
                   
               case "PLAYER-ROUND":
-                  let hasModel = R.equals(R.intersection(PATTERNS[acc.pattern], MODEL), MODEL);                         
+                  let hasModel = R.equals(R.intersection(PATTERNS[acc.pattern], MODEL), MODEL);
+
+                  if(e == "yes"){ yesButton.classList.add("chosen");};
+                  if(e == "no"){ noButton.classList.add("chosen");};                  
+                  
                   if(e == "yes" || e == "no"){
                       let correct = ((e == "yes") &&  hasModel) ||
                           ((e == "no")  && !hasModel);
@@ -383,6 +387,9 @@
                       TITLE.alpha = a;
                       controls.style.opacity = 1 - a;
                   });
+
+                  yesButton.classList.remove("chosen");
+                  noButton.classList.remove("chosen");
                   
                   PATTERNS = shuffle(ALL_PATTERNS);
                   acc.state = "NOT-STARTED";
@@ -422,6 +429,9 @@
               switch(o.e){
 
               case "START-ROUND":
+                  yesButton.classList.remove("chosen");
+                  noButton.classList.remove("chosen");
+
                   CELLS[o.cell].x = offStageRight.x;
                   CELLS[o.cell].y = offStageRight.y;
                   draw(CELLS[o.cell], PATTERNS[o.pattern]);
@@ -497,16 +507,21 @@
           background-color: #ff0ab1;	     
       }
 
+      #yesButton.chosen {
+          background-color: #ff0ab1;	     
+      }
+      #noButton.chosen {
+          background-color: #ff0ab1;	     
+      }      
+      
       #noButton:disabled, #yesButton:disabled {
           opacity:0.3;
       }         
       
-      button:hover, button:active {
+     button:active {
           background-color: #ff0ab1;
-      }
-      button:active {
           transform: translate(0px, 1px);
-          box-shadow:none;
+          box-shadow:none;          
       }
 
       #timer {
