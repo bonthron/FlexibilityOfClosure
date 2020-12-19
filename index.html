@@ -261,6 +261,7 @@
 
           
           let startButton = document.getElementById("startButton");
+          let controls = document.getElementById("controls");
           let yesButton = document.getElementById("yesButton");
           let noButton = document.getElementById("noButton");
           let directions = document.getElementById("directions");
@@ -275,15 +276,14 @@
               }).addEventListener("change", (e) => {
                   let a = e.target.target.alpha;
                   TITLE.alpha = a;
-                  yesButton.style.opacity = 1 - a;
-                  noButton.style.opacity = 1 - a;
+                  
+                  controls.style.opacity = 1 - a;
               })
 
               directions.style.opacity = 0;
-              yesButton.style.display = "inline";
-              noButton.style.display = "inline";              
               scoreDisplay.style.display = "block";
-              startButton.style.visibility = "hidden";                  
+              startButton.style.visibility = "hidden";
+              controls.style.display = "block";
           });
 
           let yesButtonStream = Bacon.fromEvent(yesButton, "click").map(() => {return {e:"yes"};});
@@ -377,13 +377,11 @@
                       directions.style.opacity = 1;
                       scoreDisplay.style.display = "none";
                       startButton.style.visibility = "visible";
-                      yesButton.style.display = "none";
-                      noButton.style.display = "none";                  
+                      controls.style.display = "none";                      
                   }).addEventListener("change", (e) => {
                       let a = e.target.target.alpha;
                       TITLE.alpha = a;
-                      yesButton.style.opacity = 1 - a;
-                      noButton.style.opacity = 1 - a;
+                      controls.style.opacity = 1 - a;
                   });
                   
                   PATTERNS = shuffle(ALL_PATTERNS);
@@ -482,7 +480,6 @@
       }
 
       #noButton, #yesButton {
-          display:none;
           background-color:#222;
           color:#efefef;
           font-size:18px;
@@ -493,8 +490,8 @@
           border:none;
           cursor:pointer;
           outline:none;
+          margin-bottom:10px;          
       }
-      #yesButton { margin-left: 30px;}
 
       #noButton:active, #yesButton:active {
           background-color: #ff0ab1;	     
@@ -519,6 +516,7 @@
           font-size:50px;
           float:left;
       }
+
       #title {
           display:none;
           position:absolute;
@@ -533,7 +531,8 @@
 
       #score { display:none; }
 
-
+      #controls { opacity:0; display:none;}
+      
       #dirIntro { display:none; }
 
       @media only screen and (min-height: 700px) {
@@ -548,7 +547,6 @@
       
       <div style="width:400px; background-color:#fff;">
         <div style="width:280px" class="auto mt4">
-
           <canvas id="canvas1" width="280" height="280" class="db"></canvas>
 
           <div id="score" class="f6">
@@ -556,23 +554,36 @@
             <div id="correct" class="dib tc" style="width:20px; color:#32CD32">0</div>                
           </div>
 
-          <div id="directions" style="padding-left:10px;">
-            <p id="dirIntro" class="f5 tl lh-copy">
+          <div id="directions" style="padding-left:10px;" class="f5 tl lh-copy">
+            <p id="dirIntro">
               How quickly can you recognize a figure that is hidden among other lines?
             </p>
-            <p class="f5 tl lh-copy">
+            <p>
               In each pattern you are to look for this model:
               <img src="flxSmall.png" class="db auto" />
             </p>
-            <p class="f5 tl lh-copy">
+            <p>
               Click "YES" for each pattern in which the model appears.
             </p>
+            <p class="dn db-ns mb4">
+              Keyboard:<br />
+              <b style="color: #ef06a4;">J</b> = YES<br />
+              <b style="color: #ef06a4;">F</b> = NO<br />              
+            </p>            
           </div>
 
-          <div style="width:280px; position:absolute; bottom:50px;" class="tc">	      
-            <button id="startButton">start game</button>
-            <button id="noButton">NO</button>            
-            <button id="yesButton">YES</button>
+          <button id="startButton">start game</button>
+
+          <div id="controls" style="width:280px; position:absolute; bottom:50px;" class="tc">	      
+            <div class="dib">
+              <button id="noButton">NO</button><br />
+              <div class="dn dib-ns silver">F</div>                            
+            </div>
+            <div class="dib" style="margin-left:30px;">
+              <button id="yesButton">YES</button><br />
+              <div class="dn dib-ns silver">J</div>              
+            </div>            
+
           </div>
 	  
         </div>
