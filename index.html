@@ -52,6 +52,8 @@
       
       //--------------------------------------------------------------------------- init
       function init(){
+
+	  document.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });	      
           
           cjs.Ticker.framerate = 60;
           cjs.Ticker.timingMode = cjs.Ticker.RAF;
